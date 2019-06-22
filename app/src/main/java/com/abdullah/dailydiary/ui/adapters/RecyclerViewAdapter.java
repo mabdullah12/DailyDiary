@@ -13,7 +13,8 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.abdullah.dailydiary.R;
-import com.abdullah.dailydiary.dto.DailyDiary;
+import com.abdullah.dailydiary.RoomDatabase.DailyDiary;
+import com.abdullah.dailydiary.RoomDatabase.DiaryEntity;
 import com.abdullah.dailydiary.helpers.Globals;
 
 import java.util.List;
@@ -21,11 +22,11 @@ import java.util.List;
 
 public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapter.DailyDiaryViewHolder> {
 
-    private List<DailyDiary> DailyDiaryThreadArrayList;
+    private List<DiaryEntity> DailyDiaryThreadArrayList;
     private Activity mActivity;
     private Context mContext;
 
-    public RecyclerViewAdapter(List<DailyDiary> list, Context context, Activity activity) {
+    public RecyclerViewAdapter(List<DiaryEntity> list, Context context, Activity activity) {
         try {
             DailyDiaryThreadArrayList = list;
             mContext = context;
@@ -45,7 +46,7 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
     @Override
     public void onBindViewHolder(DailyDiaryViewHolder holder, int position) {
         try {
-            DailyDiary DailyDiary = DailyDiaryThreadArrayList.get(DailyDiaryThreadArrayList.size()-1-position);
+            DiaryEntity DailyDiary = DailyDiaryThreadArrayList.get(DailyDiaryThreadArrayList.size()-1-position);
             holder.bindHolder(DailyDiary);
         } catch (Exception e) {
             e.printStackTrace();
@@ -79,7 +80,7 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
             linearLayout = (LinearLayout) itemView.findViewById(R.id.linear_layout);
         }
 
-        public void bindHolder(final DailyDiary dailyDiary) {
+        public void bindHolder(final DiaryEntity dailyDiary) {
             try {
                 goodDeed.setText(dailyDiary.getGoodDeed());
                 date.setText(dailyDiary.getDate());
@@ -95,7 +96,7 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
             }
         }
 
-        private void openBottomSheet(DailyDiary dailyDiary) {
+        private void openBottomSheet(DiaryEntity dailyDiary) {
             BottomSheetDialog bottomSheetDialog = new BottomSheetDialog(mContext);
             View view = mActivity.getLayoutInflater().inflate(R.layout.diary_item, null);
             EditText first,second,third,goodDeed;
@@ -106,9 +107,9 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
             goodDeed = (EditText) view.findViewById(R.id.et_good_deed);
             date = (TextView) view.findViewById(R.id.text_view_date);
 
-            first.setText(dailyDiary.getThankfulLine1());
-            second.setText(dailyDiary.getThankfulLine2());
-            third.setText(dailyDiary.getThankfull3());
+            first.setText(dailyDiary.getLine1());
+            second.setText(dailyDiary.getLine2());
+            third.setText(dailyDiary.getLine3());
             goodDeed.setText(dailyDiary.getGoodDeed());
             date.setText(dailyDiary.getDate());
             bottomSheetDialog.setContentView(view);

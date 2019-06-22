@@ -14,6 +14,7 @@ import android.view.Display;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Toast;
 
+import com.abdullah.dailydiary.RoomDatabase.AppDatabase;
 import com.orm.SugarContext;
 
 import java.util.Locale;
@@ -39,6 +40,7 @@ public class Globals {
 	public String mPackageName;
 	public int mScreenWidth;
 	public int mScreenHeight;
+	public AppDatabase appDatabase;
 	public static void resetGlobalObjects(){
 	}
 
@@ -47,6 +49,7 @@ public class Globals {
 		mActivity = activity;
 		mContext = activity;
 		SugarContext.init(mContext);
+		appDatabase = AppDatabase.getDatabase(mContext);
 		mPackageName = mContext.getPackageName();
 
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
@@ -73,6 +76,7 @@ public class Globals {
 		mActivity = activity;
 		mContext = activity;
 		SugarContext.init(mContext);
+		appDatabase = AppDatabase.getDatabase(mContext);
 	}
 
 

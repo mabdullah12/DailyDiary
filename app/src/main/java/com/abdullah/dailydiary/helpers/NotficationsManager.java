@@ -7,11 +7,20 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
+import android.os.Bundle;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.NotificationManagerCompat;
 import android.support.v4.app.RemoteInput;
+import android.support.v4.util.Pair;
 
 import com.abdullah.dailydiary.R;
+import com.abdullah.dailydiary.RoomDatabase.AppDatabase;
+import com.abdullah.dailydiary.RoomDatabase.DiaryEntity;
+
+import java.util.Calendar;
+import java.util.List;
+
+import javax.inject.Inject;
 
 /**
  * Created by muhammadabdullah on 24/03/18.
@@ -19,30 +28,57 @@ import com.abdullah.dailydiary.R;
 
 public class NotficationsManager {
 
-    public static void notficationBuilder(Context mContext) {
+    public void notficationBuilder(Context mContext, Pair<DiaryEnums, Integer> pair, String notificationContentTitle){//int replyType , String notificationContentTitle, String notificationContentText) {
+
+
+
 
         //String replyLabel = mContext.getResources().getString(R.string.reply_label);
         RemoteInput remoteInput = new RemoteInput.Builder("extra")
                 .setLabel("reply")
                 .build();
 
+
+        Intent intent = new Intent(mContext, NotificationReplyBroadcast.class);
+        intent.putExtra("level", pair.first);
+        intent.putExtra("id", pair.second);
         PendingIntent replyPendingIntent =
                 PendingIntent.getBroadcast(mContext.getApplicationContext(),
                         1,
-                        new Intent(),
+                       /* new Intent(mContext, NotificationReplyBroadcast.class)*/ intent,
                         PendingIntent.FLAG_UPDATE_CURRENT);
 
         NotificationCompat.Action action =
                 new NotificationCompat.Action.Builder(R.drawable.ic_add_black_24dp,
-                        "hi", replyPendingIntent)
+                        "", replyPendingIntent)
                         .addRemoteInput(remoteInput)
                         .build();
-        NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(mContext,"1")
-                .setSmallIcon(R.mipmap.ic_launcher)
-                .setContentTitle("Hello World")
-                .setContentText("Testing content")
-                .addAction(action)
-                .setPriority(NotificationCompat.PRIORITY_DEFAULT);
+
+        AppDatabase appDatabase;
+        List<DiaryEntity> diaryEntityList;
+        NotificationCompat.Builder mBuilder;
+        try {
+            appDatabase = AppDatabase.getDatabase(mContext);
+            //diaryEntityList = appDatabase.diaryDao().getAllDiaryEntityByDate("%"+String.valueOf(Calendar.getInstance().getTime())+"%");
+
+            mBuilder = new NotificationCompat.Builder(mContext,"1")
+                    .setSmallIcon(R.mipmap.ic_launcher)
+                    .setContentTitle(notificationContentTitle)
+                    .setContentText(pair.first.getDesc())
+                    .addAction(action)
+                    .setPriority(NotificationCompat.PRIORITY_DEFAULT);
+
+        }
+        catch (Exception e){
+            mBuilder = new NotificationCompat.Builder(mContext,"1")
+                    .setSmallIcon(R.mipmap.ic_launcher)
+                    .setContentTitle("Exception")
+                    .setContentText(e.getMessage())
+                    .addAction(action)
+                    .setPriority(NotificationCompat.PRIORITY_DEFAULT);
+        }
+
+
 
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -57,8 +93,8 @@ public class NotficationsManager {
             //NotificationManagerCompat notificationManager = NotificationManagerCompat.from(mContext);
             //notificationManager.createNotificationChannel(channel);
 
-            NotificationManager notificationManager1 = (NotificationManager) mContext.getSystemService(Context.NOTIFICATION_SERVICE);;
-            notificationManager1.createNotificationChannel(channel);
+            NotificationManager notificationManager = (NotificationManager) mContext.getSystemService(Context.NOTIFICATION_SERVICE);;
+            notificationManager.createNotificationChannel(channel);
         }
 
 
@@ -70,7 +106,6 @@ public class NotficationsManager {
 
 
     }
-
 
 
 }

@@ -1,4 +1,4 @@
-package com.abdullah.dailydiary.dto;
+package com.abdullah.dailydiary.RoomDatabase;
 
 import com.orm.SugarRecord;
 

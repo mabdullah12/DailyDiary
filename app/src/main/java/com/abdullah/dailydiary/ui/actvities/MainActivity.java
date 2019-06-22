@@ -1,6 +1,10 @@
 package com.abdullah.dailydiary.ui.actvities;
 
+import android.arch.lifecycle.Observer;
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
+import android.support.annotation.Nullable;
 import android.support.design.widget.BottomSheetBehavior;
 import android.support.design.widget.BottomSheetDialog;
 import android.support.design.widget.FloatingActionButton;
@@ -12,13 +16,25 @@ import android.widget.Button;
 import android.widget.EditText;
 
 import com.abdullah.dailydiary.R;
-import com.abdullah.dailydiary.dto.DailyDiary;
+import com.abdullah.dailydiary.RoomDatabase.AppDatabase;
+import com.abdullah.dailydiary.RoomDatabase.DailyDiary;
+import com.abdullah.dailydiary.RoomDatabase.DiaryEntity;
+import com.abdullah.dailydiary.RoomDatabase.DiaryRepo;
 import com.abdullah.dailydiary.helpers.Globals;
 import com.abdullah.dailydiary.helpers.NotficationsManager;
+import com.abdullah.dailydiary.helpers.WorkScheduler;
 import com.abdullah.dailydiary.ui.adapters.RecyclerViewAdapter;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+
+import androidx.work.PeriodicWorkRequest;
+import androidx.work.WorkManager;
+
+import static com.abdullah.dailydiary.helpers.Constants.PERIODIC_NOTIFICATION_SCHEDULER;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -27,8 +43,11 @@ public class MainActivity extends AppCompatActivity {
     private RecyclerView recyclerView;
     private FloatingActionButton floatingActionButton;
     private Globals mGlobals;
-    private ArrayList<DailyDiary> dailyDiaries = new ArrayList<>();
+    private List<DiaryEntity> dailyDiaries = new ArrayList<>();
     private BottomSheetDialog bottomSheetDialog;
+    private RecyclerViewAdapter recyclerViewAdapter;
+    private DiaryRepo diaryRepo;
+    private SimpleDateFormat sdf =  new SimpleDateFormat("dd-MMM-yyyy");
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -39,6 +58,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void initializeApplication() {
         mGlobals = Globals.getUsage(this);
+        notificationScheduler();
         initData();
         initViews();
 
@@ -48,7 +68,25 @@ public class MainActivity extends AppCompatActivity {
 
     private void initData() {
         try {
-            dailyDiaries = (ArrayList<DailyDiary>) DailyDiary.listAll(DailyDiary.class);
+            diaryRepo = new DiaryRepo(mGlobals.appDatabase.diaryDao());
+            String dateStr =  String.valueOf(sdf.format(Calendar.getInstance().getTime()));
+            diaryRepo.getDiaryLiveList().observe(this, new Observer<List<DiaryEntity>>() {
+                @Override
+                public void onChanged(@Nullable List<DiaryEntity> diaryEntities) {
+                    dailyDiaries.clear();
+                    dailyDiaries.addAll(diaryEntities);
+                    recyclerViewAdapter.notifyDataSetChanged();
+                }
+            });
+            //dailyDiaries = (ArrayList<DailyDiary>) DailyDiary.listAll(DailyDiary.class);
+            /*mGlobals.appDatabase.diaryDao().getAllDiaryEntity().observe(this, new Observer<List<DiaryEntity>>() {
+                @Override
+                public void onChanged(@Nullable List<DiaryEntity> diaryEntities) {
+                    dailyDiaries.clear();
+                    dailyDiaries.addAll(diaryEntities);
+                    recyclerViewAdapter.notifyDataSetChanged();
+                }
+            });*/
         } catch (Exception e){
             e.printStackTrace();
         }
@@ -67,6 +105,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 openBottomSheet();
+                //NotficationsManager.notficationBuilder(getApplicationContext());
             }
         });
     }
@@ -75,7 +114,7 @@ public class MainActivity extends AppCompatActivity {
         recyclerView.setHasFixedSize(true);
         LinearLayoutManager layoutManager = new LinearLayoutManager(this);
         recyclerView.setLayoutManager(layoutManager);
-        RecyclerViewAdapter recyclerViewAdapter = new RecyclerViewAdapter(dailyDiaries, this, this);
+        recyclerViewAdapter = new RecyclerViewAdapter(dailyDiaries, this, this);
         recyclerView.setAdapter(recyclerViewAdapter);
     }
 
@@ -97,15 +136,24 @@ public class MainActivity extends AppCompatActivity {
                         second.getText().length()!=0 &&
                         third.getText().length()!=0 &&
                         goodDeed.getText().length()!=0) {
-                    DailyDiary dailyDiary = new DailyDiary();
-                    dailyDiary.setDate(String.valueOf(Calendar.getInstance().getTime()));
+                    final DiaryEntity dailyDiary = new DiaryEntity();
+                    dailyDiary.setDate(String.valueOf(sdf.format(Calendar.getInstance().getTime())));
                     dailyDiary.setGoodDeed(goodDeed.getText().toString());
-                    dailyDiary.setThankfulLine1(first.getText().toString());
-                    dailyDiary.setThankfulLine2(second.getText().toString());
-                    dailyDiary.setThankfull3(third.getText().toString());
-                    dailyDiary.save();
-                    dailyDiaries.add(dailyDiary);
-                    recyclerView.getAdapter().notifyDataSetChanged();
+                    dailyDiary.setLine1(first.getText().toString());
+                    dailyDiary.setLine2(second.getText().toString());
+                    dailyDiary.setLine3(third.getText().toString());
+
+                    new Thread(){
+                        public void run(){
+                            //mGlobals.appDatabase.diaryDao().insert(dailyDiary);
+                            diaryRepo.insert(dailyDiary);
+                        }
+                    }.start();
+
+
+
+//                    dailyDiaries.add(dailyDiary);
+//                    recyclerView.getAdapter().notifyDataSetChanged();
                     bottomSheetDialog.dismiss();
                 }
 
@@ -120,6 +168,22 @@ public class MainActivity extends AppCompatActivity {
         bottomSheetDialog.show();
         //NotficationsManager.notficationBuilder(this);
 
+    }
+
+
+    private void notificationScheduler(){
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+
+
+        if (!sharedPreferences.getBoolean(PERIODIC_NOTIFICATION_SCHEDULER, false)){
+            PeriodicWorkRequest periodicWorkRequest = new PeriodicWorkRequest.Builder(WorkScheduler.class, 16, TimeUnit.MINUTES).build();
+            WorkManager.getInstance().enqueue(periodicWorkRequest);
+
+
+            SharedPreferences.Editor editor = sharedPreferences.edit();
+            editor.putBoolean(PERIODIC_NOTIFICATION_SCHEDULER, true);
+            editor.commit();
+        }
     }
 
 }

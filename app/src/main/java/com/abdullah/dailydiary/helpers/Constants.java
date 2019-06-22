@@ -6,4 +6,5 @@ package com.abdullah.dailydiary.helpers;
 
 public class Constants {
     public final static String FORMAT_DATE = "dd-MM-yyyy";
+    public final static String PERIODIC_NOTIFICATION_SCHEDULER = "pns";
 }

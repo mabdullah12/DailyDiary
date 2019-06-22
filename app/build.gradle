@@ -6,7 +6,7 @@ android {
     buildToolsVersion '26.0.2'
     defaultConfig {
         applicationId "com.abdullah.dailydiary"
-        minSdkVersion 25
+        minSdkVersion 14
         targetSdkVersion 27
         versionCode 1
         versionName "1.0"
@@ -40,6 +40,20 @@ dependencies {
     testImplementation 'androidx.test:core:1.0.0'
     // Optional -- Mockito framework
     testImplementation 'org.mockito:mockito-core:1.10.19'
+    def room_version = "1.1.1"
+
+    implementation "android.arch.persistence.room:runtime:$room_version"
+    annotationProcessor "android.arch.persistence.room:compiler:$room_version" // For Kotlin use kapt instead of annotationProcessor
+
+
+    def work_version = "1.0.0"
+
+    // (Java only)
+    implementation "android.arch.work:work-runtime:$work_version"
+
+    // Lifecycle components
+    implementation "android.arch.lifecycle:extensions:$rootProject.archLifecycleVersion"
+    annotationProcessor "android.arch.lifecycle:compiler:$rootProject.archLifecycleVersion"
 
     implementation "com.android.support:support-compat:27.1.0"
     implementation "android.arch.lifecycle:viewmodel:1.1.0"
@@ -51,6 +65,9 @@ dependencies {
     implementation 'com.intuit.sdp:sdp-android:1.0.4'
     implementation 'com.github.satyan:sugar:1.5'
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+    // https://mvnrepository.com/artifact/javax.inject/javax.inject
+    compile group: 'javax.inject', name: 'javax.inject', version: '1'
+
 }
 repositories {
     mavenCentral()
